@@ -3,8 +3,12 @@ import time
 
 # --- CONFIGURATION ---
 # Change this to match the port your ESP32 is plugged into.
-SERIAL_PORT = 'COM43' 
+SERIAL_PORT = 'COM10' 
 BAUD_RATE = 115200
+
+# --- LOGGING CONFIGURATION ---
+# Generates a unique log file name using the current timestamp
+LOG_FILENAME = f"telemetry_log_{time.strftime('%Y%m%d_%H%M%S')}.txt"
 
 # --- MULTI-CYCLE PROFILE ---
 # Define your sequence here. 
@@ -17,9 +21,18 @@ PROFILE = [
 ]
 
 def main():
+    # Open log file
+    log_file = open(LOG_FILENAME, 'w', encoding='utf-8')
+    
+    # Helper function to print to console AND write to the log file
+    def print_and_log(text):
+        print(text)
+        log_file.write(text + "\n")
+        log_file.flush() # Ensure data is written to disk immediately
+        
     try:
         # 1. Open the serial connection
-        print(f"Connecting to ESP32 on {SERIAL_PORT}...")
+        print_and_log(f"Connecting to ESP32 on {SERIAL_PORT}...")
         esp32 = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
         time.sleep(2) # Wait for ESP32 to reboot on connection
         
@@ -35,7 +48,7 @@ def main():
             
             # Format: "T:target_temp,D:duration_in_minutes\n"
             command = f"T:{target},D:{duration_mins}\n"
-            print(f"\n>> Sending Cycle {index + 1}/{len(PROFILE)}: {command.strip()}")
+            print_and_log(f"\n>> Sending Cycle {index + 1}/{len(PROFILE)}: {command.strip()}")
             esp32.write(command.encode('utf-8'))
             
             # Reset our Python-side timers
@@ -47,9 +60,10 @@ def main():
             send_step(current_step_index)
         
         # 3. Listen for Telemetry and Manage Cycles
-        print("\nListening for live data (Press Ctrl+C to stop)...")
-        print("Current(°C) | Setpoint(°C) | Compressor | Heater")
-        print("-" * 52)
+        print_and_log("\nListening for live data (Press Ctrl+C to stop)...")
+        header = "Current(°C) | Setpoint(°C) | Compressor | Heater"
+        print_and_log(header)
+        print_and_log("-" * len(header))
         
         while True:
             # --- Cycle Management Logic ---
@@ -63,35 +77,39 @@ def main():
                     if current_step_index < len(PROFILE):
                         send_step(current_step_index)
                     else:
-                        print("\n>> Profile complete! The ESP32 will now hold the final temperature indefinitely.")
+                        print_and_log("\n>> Profile complete! The ESP32 will now hold the final temperature indefinitely.")
 
             # --- Telemetry Reading Logic ---
             if esp32.in_waiting > 0:
                 line = esp32.readline().decode('utf-8').strip()
                 
                 if line.startswith("ACK:"):
-                    print(f">> ESP32 Confirms: {line}")
+                    print_and_log(f">> ESP32 Confirms: {line}")
                 elif "," in line:
                     data = line.split(',')
                     if len(data) == 4:
                         curr_temp, setpoint = data[0], data[1]
                         comp_on = "ON" if data[2] == "1" else "OFF"
                         heat_on = "ON" if data[3] == "1" else "OFF"
-                        print(f"{curr_temp:>10}  | {setpoint:>12} | {comp_on:>10} | {heat_on:>6}")
+                        print_and_log(f"{curr_temp:>10}  | {setpoint:>12} | {comp_on:>10} | {heat_on:>6}")
                 else:
                     if line: 
-                        print(f"Debug: {line}")
+                        print_and_log(f"Debug: {line}")
                         
             # Keep CPU usage low
             time.sleep(0.1)
             
     except serial.SerialException:
-        print(f"\nError: Could not open {SERIAL_PORT}. Is the board plugged in and the Arduino/PIO Serial Monitor closed?")
+        print_and_log(f"\nError: Could not open {SERIAL_PORT}. Is the board plugged in and the Arduino/PIO Serial Monitor closed?")
     except KeyboardInterrupt:
-        print("\nExiting script. The ESP32 will continue running its current ramp autonomously.")
+        print_and_log("\nExiting script. The ESP32 will continue running its current ramp autonomously.")
     finally:
         if 'esp32' in locals() and esp32.is_open:
             esp32.close()
+            
+        # Ensure the log file is safely closed when exiting
+        log_file.close()
+        print(f"Log saved successfully to: {LOG_FILENAME}")
 
 if __name__ == "__main__":
     main()
