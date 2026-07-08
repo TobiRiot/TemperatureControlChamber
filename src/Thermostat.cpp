@@ -21,7 +21,7 @@ Thermostat::Thermostat(int compressorPin, int heaterPin) {
 
 // --- Setup a new ramp ---
 void Thermostat::startNewTemperatureRamp(float currentTemp, float newTarget, float minutes) {
-  startSetpoint = currentSetpoint; 
+  startSetpoint = currentTemp; 
   targetSetpoint = newTarget;
   transitionStartTime = millis();
   transitionDurationMs = (unsigned long)(minutes * 60000.0);
