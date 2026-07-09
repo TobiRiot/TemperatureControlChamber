@@ -1,54 +1,65 @@
-Dynamic Temperature Chamber Controller
-This repository contains the firmware and control software for a dynamic temperature chamber. The system utilizes a microcontroller to manage physical hardware and a Python script to define and transmit multi-stage heating and cooling profiles.
+# 🌡️ Dynamic Temperature Chamber Controller
 
-Hardware Configuration
-The microcontroller firmware is configured for a Seeed Studio XIAO ESP32-C3. Ensure your hardware is wired to the following pins:
+![Hardware](https://img.shields.io/badge/Hardware-XIAO_ESP32--C3-blue?style=flat-square) <!-- -->
+![Python](https://img.shields.io/badge/Script-Python_3.x-yellow?style=flat-square) <!-- -->
 
-Sensors (Thermistors): D0, D1, D2
+This repository contains the firmware and control software for a dynamic temperature chamber. The system utilizes a microcontroller to manage the physical hardware and a Python script to define and transmit multi-stage heating and cooling profiles.
 
-Compressor Relay: D4
+---
 
-Heater Relay: D5
-How to Program a Heat Cycle
-The heat cycles are completely managed by the Python script (controller.py). You do not need to recompile the C++ firmware to change the temperature profile.
+## 🛠️ Hardware Configuration
 
-To program a new heat cycle, open controller.py and locate the PROFILE array.
+The microcontroller firmware is explicitly configured for a **Seeed Studio XIAO ESP32-C3** <!-- -->. Ensure your hardware is wired to the following pins:
 
-The PROFILE Array
-The profile is a list of sequential stages. Each stage is defined as a tuple containing two numbers: (target_temp_in_C, duration_in_minutes).
+| Component | Pin | Description |
+| :--- | :--- | :--- |
+| **Sensors** | `D0`, `D1`, `D2` | Thermistor inputs for averaging temperature <!-- --> |
+| **Compressor** | `D4` | Relay control for cooling <!-- --> |
+| **Heater** | `D5` | Relay control for heating <!-- --> |
 
-Example Configuration:
+---
 
-Python
+## 📈 How to Program a Heat Cycle
+
+The heat cycles are completely managed by the Python script (`controller.py`) <!-- -->. You do not need to recompile the C++ firmware to change your temperature profiles.
+
+To program a new heat cycle, open `controller.py` and modify the `PROFILE` list <!-- -->. 
+
+### The `PROFILE` Array
+The profile is a list of sequential stages. Each stage is defined as a tuple containing two numbers: `(target_temp_in_C, duration_in_minutes)` <!-- -->.
+
+**Example Configuration:**
+```python
 PROFILE = [
     (30.0, 10.0),   # Cycle 1: Ramp to 30.0°C over 10 minutes
     (40.0, 15.0),   # Cycle 2: Ramp to 40.0°C over 15 minutes
     (40.0, 30.0),   # Cycle 3: Hold at 40.0°C for 30 minutes
     (25.0, 20.0)    # Cycle 4: Cool down to 25.0°C over 20 minutes
 ]
-How the Controller Interprets the Profile:
-Ramping: If the target temperature is different from the current temperature, the ESP32 will linearly interpolate (ramp) the setpoint over the specified duration.
+```
 
-Holding: To hold a specific temperature, create a cycle where the target temperature is the same as the previous cycle's target, and specify how long you want to hold it (e.g., Cycle 3 in the example above).
+Profile Behavior:
+Ramping: If the target temperature differs from the current temperature, the ESP32 will linearly interpolate the setpoint over the specified duration .
 
-Completion: Once the final profile stage finishes, the ESP32 will hold the final temperature indefinitely.
+Holding: To hold a specific temperature, create a cycle where the target temperature matches the previous cycle's target, and specify the hold duration .
 
-Running the System
-Flash the Firmware: Ensure main.cpp, Thermostat.cpp, Sensors.cpp, and Comms.cpp are flashed to your Seeed Studio XIAO ESP32-C3.
+Completion: Once the final profile stage finishes, the ESP32 will hold the final temperature indefinitely .
 
-Configure Python COM Port: Open controller.py and modify the SERIAL_PORT variable (default is 'COM10') to match the port your ESP32 is connected to.
+## 🚀 Running the System
+Flash the Firmware: Ensure the provided .cpp and .h files are flashed to your ESP32.
 
-Execute the Script: Run the script using Python:
+Configure COM Port: Open controller.py and modify the SERIAL_PORT variable (default is '`COM10`') to match your board's connection .
 
-Bash
-python controller.py
-Observe Initialization: The Python script connects at a baud rate of 115200. It will format your programmed steps into strings like "T:target_temp,D:duration_in_minutes\n" and send them to the microcontroller. The ESP32 will respond with "ACK: New Profile Loaded" to confirm receipt.
+Execute: Run the script from your terminal:
 
-Telemetry and Logging
-Once the script is running, the ESP32 broadcasts telemetry data every 2 seconds (2000 ms).
+`python controller.py`
 
-Live Console Output: The Python script will print a live dashboard displaying the Current Temperature, Setpoint, Compressor State, and Heater State.
+## 📊 Telemetry and Logging
+Once active, the ESP32 broadcasts telemetry data every 2 seconds .
 
-Data Logging: All telemetry is automatically saved to a uniquely timestamped log file in the same directory, formatted as telemetry_log_YYYYMMDD_HHMMSS.txt.
+Live Dashboard: The Python script prints a live console table displaying the Current Temperature, Setpoint, Compressor State, and Heater State .
 
-Safe Interruptions: If you need to stop logging or close the terminal, pressing Ctrl+C will cleanly exit the Python script and save the log file. The ESP32 will continue running its current temperature ramp autonomously.
+Auto-Logging: All telemetry is automatically saved to a uniquely timestamped .txt file in the same directory .
+
+Safe Interruptions: Pressing Ctrl+C will cleanly exit the script and save the log file. The ESP32 will safely continue running its current temperature ramp autonomously .
+        
