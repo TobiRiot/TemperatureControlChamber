@@ -25,7 +25,7 @@ class SDI12AnalyzerWindow(ctk.CTkToplevel):
     def __init__(self, master, log_file, base_dir):
         super().__init__(master)
         self.title("Live SDI-12 Analysis")
-        self.geometry("900x700")
+        self.geometry("900x600")
         self.log_file = log_file
         self.base_dir = base_dir
         self.df = None
@@ -53,15 +53,15 @@ class SDI12AnalyzerWindow(ctk.CTkToplevel):
         self.tab_reg = self.tabs.add("Regression")
 
         # Setup Matplotlib Figures for each tab
-        self.fig_ts = Figure(figsize=(8, 5), dpi=100)
+        self.fig_ts = Figure(figsize=(8, 3.5), dpi=100)
         self.canvas_ts = FigureCanvasTkAgg(self.fig_ts, master=self.tab_ts)
         self.canvas_ts.get_tk_widget().pack(fill="both", expand=True)
 
-        self.fig_corr = Figure(figsize=(6, 5), dpi=100)
+        self.fig_corr = Figure(figsize=(6, 3.5), dpi=100)
         self.canvas_corr = FigureCanvasTkAgg(self.fig_corr, master=self.tab_corr)
         self.canvas_corr.get_tk_widget().pack(fill="both", expand=True)
         
-        self.fig_reg = Figure(figsize=(8, 5), dpi=100)
+        self.fig_reg = Figure(figsize=(8, 3.5), dpi=100)
         self.canvas_reg = FigureCanvasTkAgg(self.fig_reg, master=self.tab_reg)
         self.canvas_reg.get_tk_widget().pack(fill="both", expand=True)
 
@@ -220,12 +220,14 @@ class ThermalControllerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Thermal Controller Dashboard")
-        self.root.geometry("800x950")
+        self.root.geometry("800x700")
         
         self.data_queue = queue.Queue()
         self.is_running = False
         self.serial_conn = None
         self.PROFILE = [] 
+        self.master_scroll = ctk.CTkScrollableFrame(root)
+        self.master_scroll.pack(fill="both", expand=True)
         
         # Data storage for the graph
         self.time_data = []
@@ -237,7 +239,7 @@ class ThermalControllerApp:
         self.comp_data = []
 
         # --- 1. Connection & Editor Panel ---
-        self.top_frame = ctk.CTkFrame(root, fg_color="transparent")
+        self.top_frame = ctk.CTkFrame(self.master_scroll, fg_color="transparent")
         self.top_frame.pack(pady=5, padx=20, fill="x")
         
         # Connection
@@ -309,7 +311,7 @@ class ThermalControllerApp:
         self.update_steps_btn.grid(row=0, column=4, padx=5)
 
         # Dynamic Scrollable Area for Targets
-        self.targets_scroll = ctk.CTkScrollableFrame(self.editor_frame, height=120)
+        self.targets_scroll = ctk.CTkScrollableFrame(self.editor_frame, height=90)
         self.targets_scroll.pack(pady=5, padx=10, fill="x")
         self.target_rows = [] # Will hold our dynamic row data
         
@@ -337,7 +339,7 @@ class ThermalControllerApp:
         self.adjust_target_rows()
 
         # --- 3. Telemetry Dashboard ---
-        self.dash_frame = ctk.CTkFrame(root, fg_color="transparent")
+        self.dash_frame = ctk.CTkFrame(self.master_scroll, fg_color="transparent")
         self.dash_frame.pack(pady=5)
         self.profile_label = ctk.CTkLabel(self.dash_frame, text="Waiting to start...", font=("Roboto", 14, "bold"), text_color="#17a2b8")
         self.profile_label.pack()
@@ -350,7 +352,7 @@ class ThermalControllerApp:
         self.analysis_btn.pack(pady=10)
 
         # --- 4. Live Graph ---
-        self.graph_frame = ctk.CTkFrame(root)
+        self.graph_frame = ctk.CTkFrame(self.master_scroll)
         self.graph_frame.pack(pady=10, padx=20, fill="both", expand=True)
         
         # Setup Matplotlib Figure
@@ -369,7 +371,7 @@ class ThermalControllerApp:
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
         # --- 5. Log Output ---
-        self.log_text = ctk.CTkTextbox(root, width=760, height=100)
+        self.log_text = ctk.CTkTextbox(self.master_scroll, width=760, height=60)
         self.log_text.pack(pady=10, padx=20)
         self.log_text.configure(state="disabled")
 
